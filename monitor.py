@@ -6,6 +6,7 @@ import os
 from bs4 import BeautifulSoup, Comment
 from email_sender import EmailSender
 from config import EMAIL_CONFIG
+from html_diff import compare_html
 
 def clean_html(html_content):
     """清理HTML内容，移除可能导致误判的元素"""
@@ -75,7 +76,7 @@ def get_page_content(url):
             'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
         }
         response = requests.get(url, headers=headers, timeout=10)
-        # response.encoding = 'utf-8'  # 确保中文正确显示
+        response.encoding = 'utf-8'  # 确保中文正确显示
         return response.text
     except Exception as e:
         print(f"获取页面出错: {e}")
@@ -93,7 +94,7 @@ def monitor_website(url):
     # 清理并保存初始内容
     cleaned_previous = clean_html(previous_content)
     previous_hash = hashlib.md5(cleaned_previous.encode()).hexdigest()
-    
+
     while True:
         try:
             # 等待3秒
@@ -113,12 +114,14 @@ def monitor_website(url):
                 current_time = datetime.now()
                 update_message = f"[{current_time}] Tesla官网已更新!"
                 print(update_message)
-
+                # 比较差异
+                changes = compare_html(cleaned_previous, cleaned_current)
                 
                 # 发送邮件通知
-                email_sender.send_update_notification(url)
+                email_sender.send_update_notification(url, changes)
                 
                 previous_hash = current_hash
+                cleaned_previous = cleaned_current
                 
         except Exception as e:
             print(f"监控过程出错: {e}")

@@ -40,10 +40,22 @@ class EmailSender:
             print(f"连接失败！错误信息：{e}")
             return False
 
-    def send_update_notification(self, url):
+    def send_update_notification(self, url, changes):
         """发送网站更新通知邮件"""
         subject = "Tesla官网更新通知"
         current_time = datetime.now()
+        
+        # 生成变更内容HTML
+        changes_html = "<h3>具体变更：</h3><ul>"
+        for change in changes:
+            color = "green" if change['type'] == 'added' else "red"
+            symbol = "+" if change['type'] == 'added' else "-"
+            changes_html += f"""
+                <li style="color: {color};">
+                    内容: {change['content']}
+                </li>
+            """
+        changes_html += "</ul>"
         
         content = f"""
         <html>
@@ -51,6 +63,7 @@ class EmailSender:
             <h2>Tesla官网内容已更新</h2>
             <p>更新时间：{current_time}</p>
             <p>网站地址：<a href="{url}">{url}</a></p>
+            {changes_html}
             <p>请及时查看最新内容！</p>
         </body>
         </html>
